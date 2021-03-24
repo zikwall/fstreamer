@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:fstreamer/screens/home/screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(FStreamerApplication());
 }
 
 class FStreamerApplication extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return MaterialApp(
       title: 'F-Streamer Project',
       theme: ThemeData(
