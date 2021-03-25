@@ -16,10 +16,12 @@ class StreamScreen extends StatefulWidget {
 }
 
 class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver {
-  final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
+  FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
   CameraController _controller;
   Future<void> _initializeControllerFuture;
   bool mounted = false;
+  bool ffmpgeRunned = false;
+  int ffmpegProcessId = 0;
 
   @override
   void initState() {
@@ -46,6 +48,14 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       _controller != null
           ? _initializeControllerFuture = _controller.initialize()
           : null; //on pause camera is disposed, so we need to call again "issue is only for android"
+    } else if (state == AppLifecycleState.paused) {
+      _controller != null
+          ? _initializeControllerFuture = _controller.initialize()
+          : null;
+    } else if (state == AppLifecycleState.inactive) {
+      _controller != null
+          ? _initializeControllerFuture = _controller.initialize()
+          : null;
     }
   }
 
@@ -63,14 +73,14 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     );
 
     // Next, initialize the controller. This returns a Future.
-    //_initializeControllerFuture = _controller.initialize();
+    _initializeControllerFuture = _controller.initialize();
 
     setState(() {
       mounted = true;
     });
   }
 
-  runFfmpeg() {
+  runFfmpeg() async {
     var arguments = [
       "-y", "-video_size", "hd720",
       "-f", "android_camera",
@@ -82,8 +92,13 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       "rtmp://vp-push-ix1.gvideo.co/in/53304?bf5f5142a6b37e8962fa75d3f20d74e5"
     ];
 
-    _flutterFFmpeg.executeAsyncWithArguments(arguments, (rc) {
+    int pid = await _flutterFFmpeg.executeAsyncWithArguments(arguments, (rc) {
       print("FFmpeg process exited with rc $rc");
+    });
+
+    setState(() {
+      ffmpgeRunned = true;
+      ffmpegProcessId = pid;
     });
   }
 
@@ -137,9 +152,17 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                 // catch the error.
                 try {
                   // Ensure that the camera is initialized.
-                  //await _initializeControllerFuture;
+                  if (ffmpgeRunned) {
+                    _flutterFFmpeg.cancelExecution(ffmpegProcessId);
 
-                  runFfmpeg();
+                    setState(() {
+                      ffmpegProcessId = 0;
+                      ffmpgeRunned = false;
+                    });
+                  } else {
+                    //await _initializeControllerFuture;
+                    runFfmpeg();
+                  }
                 } catch (e) {
                   // If an error occurs, log the error to the console.
                   print(e);
