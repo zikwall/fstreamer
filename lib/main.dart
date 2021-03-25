@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:fstreamer/screens/home/screen.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
   runApp(FStreamerApplication());
 }
 
