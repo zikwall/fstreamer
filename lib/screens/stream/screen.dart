@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // dependencies
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:camera/camera.dart';
+import 'package:video_player/video_player.dart';
 
 class StreamScreen extends StatefulWidget {
   StreamScreen({Key key}) : super(key: key);
@@ -17,11 +18,16 @@ class StreamScreen extends StatefulWidget {
 
 class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver {
   FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
+  FlutterFFmpegConfig _flutterFFmpegConfig = new FlutterFFmpegConfig();
+
   CameraController _controller;
   Future<void> _initializeControllerFuture;
+  VideoPlayerController _videoController;
+
   bool mounted = false;
   bool ffmpgeRunned = false;
   int ffmpegProcessId = 0;
+  String ffpmpegPipePath = "";
 
   @override
   void initState() {
@@ -36,6 +42,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     WidgetsBinding.instance?.removeObserver(this);
     _controller?.dispose();
     _flutterFFmpeg?.cancel();
+    _videoController?.dispose();
 
     super.dispose();
   }
@@ -81,24 +88,37 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
   }
 
   runFfmpeg() async {
-    var arguments = [
-      "-y", "-video_size", "hd720",
-      "-f", "android_camera",
-      "-i", "0:0",
-      "-s", "720x480",
-      "-c:a", "copy", "-c:v", "copy",
-      "-vcodec", "flv1",
-      "-f", "flv",
-      "rtmp://vp-push-ix1.gvideo.co/in/53304?bf5f5142a6b37e8962fa75d3f20d74e5"
-    ];
+    _flutterFFmpegConfig.registerNewFFmpegPipe().then((val) async {
+      var arguments = [
+        "-y", "-video_size", "hd720",
+        "-f", "android_camera",
+        "-i", "0:0",
+        "-s", "720x480",
+        "-c:v", "copy", "-c:a", "copy",
+        "-f", "mp4",
+        "-movflags", "frag_keyframe+empty_moov",
+        val
+      ];
 
-    int pid = await _flutterFFmpeg.executeAsyncWithArguments(arguments, (rc) {
-      print("FFmpeg process exited with rc $rc");
-    });
+      print("PAHSSSS $val");
 
-    setState(() {
-      ffmpgeRunned = true;
-      ffmpegProcessId = pid;
+      int pid = await _flutterFFmpeg.executeAsyncWithArguments(arguments, (rc) {
+        print("FFmpeg process exited with rc $rc");
+
+        _flutterFFmpegConfig.closeFFmpegPipe(ffpmpegPipePath);
+      });
+
+      _videoController = VideoPlayerController.network("$val")
+        ..initialize().then((_) { setState(() {
+
+        }); });
+      _videoController.play();
+
+      setState(() {
+        ffmpgeRunned = true;
+        ffmpegProcessId = pid;
+        ffpmpegPipePath = val;
+      });
     });
   }
 
@@ -124,23 +144,18 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                 padding: EdgeInsets.only(
                   top: statusBarHeight,
                 ),
-                child: Column(
-                  children: <Widget>[
-                    Expanded(
-                      child: FutureBuilder<void>(
-                        future: _initializeControllerFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.done) {
-                            // If the Future is complete, display the preview.
-                            return CameraPreview(_controller);
-                          } else {
-                            // Otherwise, display a loading indicator.
-                            return Center(child: CircularProgressIndicator());
-                          }
-                        },
-                      ),
-                    )
-                  ],
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: <Widget>[
+                      _videoController == null ? Container(
+                        width: 100,
+                        height: 100,
+                        color: Colors.green,
+                      ) :VideoPlayer(_videoController),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -154,10 +169,12 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                   // Ensure that the camera is initialized.
                   if (ffmpgeRunned) {
                     _flutterFFmpeg.cancelExecution(ffmpegProcessId);
+                    _flutterFFmpegConfig.closeFFmpegPipe(ffpmpegPipePath);
 
                     setState(() {
                       ffmpegProcessId = 0;
                       ffmpgeRunned = false;
+                      ffpmpegPipePath = "";
                     });
                   } else {
                     //await _initializeControllerFuture;
