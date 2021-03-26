@@ -74,13 +74,25 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
 
   runFfmpeg() async {
     var arguments = [
-      "-y", "-video_size", "hd720",
+      "-re",
+      "-y",
+      "-v", "info",
+      "-video_size", "hd720",
       "-f", "rawvideo",
-      "-i", "pipe:",
+      "-i", "-",
+      "-use_wallclock_as_timestamps", "1",
+      "-r", "25",
+      "-pix_fmt", "bgr24",
       "-s", "720x480",
-      "-c:a", "copy", "-c:v", "copy",
+      "-c:a", "copy",
+      "-c:v", "libx264",
       "-vcodec", "flv1",
-      "-vsync", "0",
+      //"-vsync", "0",
+      "-pix_fmt", "yuv420p",
+      //"-preset", "ultrafast",
+      //"-crf", "0",
+      "-pixel_format", "bgr0",
+      "-t", "00:00:05",
       "-f", "flv",
       "-flvflags", "no_duration_filesize",
       "rtmp://vp-push-ix1.gvideo.co/in/53304?bf5f5142a6b37e8962fa75d3f20d74e5"
@@ -89,7 +101,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     int pid = await _flutterFFmpeg.executeAsyncWithArguments(arguments, (rc) {
       print("FFmpeg process exited with rc $rc");
 
-      _stopVideoRecording();
+      //_stopVideoRecording();
     });
 
     setState(() {
@@ -143,8 +155,6 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
         ),
         child: WillPopScope(
           onWillPop: () async {
-            await _controller?.dispose();
-
             return true;
           },
           child: Scaffold(
@@ -183,7 +193,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                   // Ensure that the camera is initialized.
                   if (ffmpgeRunned) {
                     _flutterFFmpeg.cancelExecution(ffmpegProcessId);
-                    _stopVideoRecording();
+                    //_stopVideoRecording();
 
                     setState(() {
                       ffmpegProcessId = 0;
@@ -191,12 +201,9 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                     });
                   } else {
                     //await _initializeControllerFuture;
+                    //String path = await _startVideoRecording();
 
-                    String path = await _startVideoRecording();
-
-                    if (path != null) {
-                      runFfmpeg();
-                    }
+                    runFfmpeg();
                   }
                 } catch (e) {
                   // If an error occurs, log the error to the console.
