@@ -65,7 +65,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     }
     _controller = CameraController(
       cameraDescription,
-      ResolutionPreset.medium,
+      ResolutionPreset.low,
       enableAudio: enableAudio,
       androidUseOpenGL: useOpenGL,
     );
@@ -99,7 +99,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       // Get a specific camera from the list of available cameras.
       firstCamera,
       // Define the resolution to use.
-      ResolutionPreset.medium,
+      ResolutionPreset.low,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -204,6 +204,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final double statusBarHeight = 0;
+    final bool isStreamed = _controller.value.isStreamingVideoRtmp;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
@@ -244,14 +245,17 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
               ),
             ),
             floatingActionButton: FloatingActionButton(
-              child: Icon(Icons.camera_alt),
+              child: Icon(
+                isStreamed ? Icons.stop : Icons.camera_alt,
+              ),
               onPressed: () async {
-                if (!_controller.value.isStreamingVideoRtmp) {
+                if (!isStreamed) {
                   onVideoStreamingButtonPressed();
                 } else {
                   onStopButtonPressed();
                 }
               },
+              backgroundColor: isStreamed ? Colors.red : Colors.green,
             ),
           ),
         )
