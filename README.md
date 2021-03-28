@@ -2,15 +2,51 @@
 
 A new Flutter project.
 
-## Getting Started
+## Temporary fixes
 
-This project is a starting point for a Flutter application.
+- [x] android\src\main\kotlin\com\whelksoft\camera_with_rtmp\Camera.kt
 
-A few resources to get you started if this is your first Flutter project:
+```kotlin
+sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+```
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+```kotlin
+override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    val surfaceTexture = flutterTexture.surfaceTexture()
+    val size = getSizePairByOrientation()
+    surfaceTexture.setDefaultBufferSize(size.first, size.second)
+    val flutterSurface = Surface(surfaceTexture)
+}
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+override fun surfaceDestroyed(holder: SurfaceHolder) {}
+override fun surfaceCreated(holder: SurfaceHolder) {}
+```
+
+- [x] android\src\main\kotlin\com\whelksoft\camera_with_rtmp\CameraNativeView.kt
+
+```kotlin
+override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    Log.d("CameraNativeView", "surfaceChanged $width $height")
+}
+
+override fun surfaceDestroyed(holder: SurfaceHolder) {
+    Log.d("CameraNativeView", "surfaceDestroyed")
+}
+```
+
+- [x] android\src\main\kotlin\com\whelksoft\camera_with_rtmp\CameraUtils.kt
+
+```kotlin
+details["sensorOrientation"] = sensorOrientation!!
+```
+
+- [x] android\src\main\kotlin\com\whelksoft\camera_with_rtmp\VideoEncoder.kt line 427:
+
+```kotlin
+processOutput(byteBuffer!!, mediaCodec, outBufferIndex, bufferInfo)
+```
+- [x] android\src\main\kotlin\com\whelksoft\camera_with_rtmp\VideoEncoder.kt line 218:
+
+```kotlin
+val byteBufferList = extractVpsSpsPpsFromH265(mediaFormat.getByteBuffer("csd-0")!!)
+```
