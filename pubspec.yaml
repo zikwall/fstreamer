@@ -23,7 +23,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_ffmpeg: ^0.4.0
+  rtmp_publisher: ^0.3.7
   camera: ^0.8.0
 
 
