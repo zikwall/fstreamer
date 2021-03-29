@@ -65,7 +65,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     }
     _controller = CameraController(
       cameraDescription,
-      ResolutionPreset.low,
+      ResolutionPreset.medium,
       enableAudio: enableAudio,
       androidUseOpenGL: useOpenGL,
     );
@@ -99,7 +99,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       // Get a specific camera from the list of available cameras.
       firstCamera,
       // Define the resolution to use.
-      ResolutionPreset.low,
+      ResolutionPreset.medium,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -204,7 +204,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     final double statusBarHeight = 0;
-    final bool isStreamed = _controller.value.isStreamingVideoRtmp;
+    final bool isStreamed = _controller != null && _controller.value.isStreamingVideoRtmp;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
@@ -224,22 +224,35 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                 padding: EdgeInsets.only(
                   top: statusBarHeight,
                 ),
-                child: Column(
+                child: Stack(
                   children: <Widget>[
-                    Expanded(
-                      child: FutureBuilder<void>(
-                        future: _initializeControllerFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.done) {
-                            // If the Future is complete, display the preview.
-                            return CameraPreview(_controller);
-                          } else {
-                            // Otherwise, display a loading indicator.
-                            return Center(child: CircularProgressIndicator());
-                          }
-                        },
+                    FutureBuilder<void>(
+                      future: _initializeControllerFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          // If the Future is complete, display the preview.
+                          return CameraPreview(_controller);
+                        } else {
+                          // Otherwise, display a loading indicator.
+                          return Center(child: CircularProgressIndicator());
+                        }
+                      },
+                    ),
+                    Positioned.fill(
+                      child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 30
+                            ),
+                            child: Text(
+                              '20 FPS',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
