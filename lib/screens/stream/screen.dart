@@ -77,6 +77,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       ResolutionPreset.high,
       enableAudio: enableAudio,
       androidUseOpenGL: useOpenGL,
+      streamingPreset: ResolutionPreset.high,
     );
 
     // If the controller is updated then update the UI.
@@ -113,7 +114,10 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       // Get a specific camera from the list of available cameras.
       firstCamera,
       // Define the resolution to use.
-      ResolutionPreset.max,
+      ResolutionPreset.high,
+      enableAudio: enableAudio,
+      androidUseOpenGL: useOpenGL,
+      streamingPreset: ResolutionPreset.high,
     );
 
     // Next, initialize the controller. This returns a Future.
