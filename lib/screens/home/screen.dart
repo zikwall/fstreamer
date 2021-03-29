@@ -44,8 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: <Widget>[
                     Expanded(
                       child: Center(
-                        child: InkWell(
-                          onTap: () {
+                        child: TextButton(
+                          child: Container(
+                            padding: EdgeInsets.all(10),
+                            child: Text('Goto stream'),
+                          ),
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -53,9 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          child: Container(
-                            padding: EdgeInsets.all(10),
-                            child: Text('camera'),
+                          style: TextButton.styleFrom(
+                            primary: Colors.white,
+                            backgroundColor: Colors.orange,
                           ),
                         ),
                       )
