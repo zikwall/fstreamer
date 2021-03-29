@@ -22,9 +22,11 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
   bool enableAudio = true;
   bool useOpenGL = true;
   String url = RTMPPush;
+  int bitrate = 0;
 
   Future<void> _initializeControllerFuture;
   CameraController _controller;
+  Timer _timer;
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
     _controller?.dispose();
+    _timer?.cancel();
 
     super.dispose();
   }
@@ -52,6 +55,12 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
 
     if (state == AppLifecycleState.inactive) {
       _controller?.dispose();
+
+      if (_timer != null) {
+        _timer.cancel();
+        _timer = null;
+      }
+
     } else if (state == AppLifecycleState.resumed) {
       if (_controller != null) {
         onNewCameraSelected(_controller.description);
@@ -65,7 +74,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     }
     _controller = CameraController(
       cameraDescription,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
       enableAudio: enableAudio,
       androidUseOpenGL: useOpenGL,
     );
@@ -75,6 +84,11 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       if (mounted) setState(() {});
       if (_controller.value.hasError) {
         print('Camera error ${_controller.value.errorDescription}');
+
+        if (_timer != null) {
+          _timer.cancel();
+          _timer = null;
+        }
       }
     });
 
@@ -99,7 +113,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
       // Get a specific camera from the list of available cameras.
       firstCamera,
       // Define the resolution to use.
-      ResolutionPreset.medium,
+      ResolutionPreset.max,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -124,7 +138,21 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     String _url = url;
 
     try {
+      if (_timer != null) {
+        _timer.cancel();
+        _timer = null;
+      }
+
       await _controller.startVideoStreaming(_url);
+
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+        var stats = await _controller.getStreamStatistics();
+
+        setState(() {
+          bitrate = stats.bitrate;
+        });
+      });
+
     } on CameraException catch (e) {
       print(e);
       return null;
@@ -140,7 +168,17 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
     }
 
     try {
+      if (_timer != null) {
+        _timer.cancel();
+        _timer = null;
+      }
+
       await _controller.stopVideoStreaming();
+
+      setState(() {
+        bitrate = 0;
+      });
+
     } on CameraException catch (e) {
       print(e);
       return null;
@@ -247,7 +285,7 @@ class _StreamScreenState extends State<StreamScreen> with WidgetsBindingObserver
                                 vertical: 30
                             ),
                             child: Text(
-                              '20 FPS',
+                              "${bitrate / 1000} kbps",
                               style: TextStyle(color: Colors.white),
                             ),
                           )
